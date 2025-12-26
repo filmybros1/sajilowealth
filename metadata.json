@@ -1,5 +1,6 @@
 {
-  "name": "Sajilo Wealth - SIP Calculator Nepal",
-  "description": "Premium wealth planning tool for Nepalese investors. Calculate SIP returns with NEPSE insights, step-up options, and AI financial advisor.",
+  "name": "Sajilo Wealth - Premium SIP Calculator Nepal",
+  "short_name": "SajiloWealth",
+  "description": "Professional SIP calculator for Nepalese investors with localized NEPSE insights and AI advisor.",
   "requestFramePermissions": []
 }
