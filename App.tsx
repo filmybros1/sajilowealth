@@ -9,7 +9,6 @@ import {
   Tooltip, 
   ResponsiveContainer,
 } from 'recharts';
-import * as XLSX from 'xlsx';
 import SliderInput from './components/SliderInput';
 import { calculateSIP, formatCurrency } from './utils/calculations';
 import { getFinancialAdvice } from './services/geminiService';
@@ -55,40 +54,13 @@ const App: React.FC = () => {
     setInputs(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadPDF = () => {
     setIsExporting(true);
-    try {
-      // Prepare data for Excel transformation
-      const worksheetData = results.schedule.map(row => ({
-        'Period': row.label,
-        'Investment (NPR)': row.investmentAmount,
-        'Periodic Return (NPR)': row.periodicReturn,
-        'Cumulative Invested (NPR)': row.cumulativeInvested,
-        'Projected Balance (NPR)': row.estimatedValue
-      }));
-
-      // Create worksheet and workbook structure
-      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-      
-      // Define column widths for better readability
-      const wscols = [
-        {wch: 15}, {wch: 20}, {wch: 20}, {wch: 25}, {wch: 25}
-      ];
-      worksheet['!cols'] = wscols;
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'SIP Timeline');
-
-      // Export the finalized file
-      const date = new Date().toISOString().split('T')[0];
-      const fileName = `SajiloWealth_SIP_Report_${date}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
-    } catch (error) {
-      console.error('Excel Export Error:', error);
-      alert('Failed to generate Excel file. Please try again.');
-    } finally {
+    // Slight delay to ensure any layout calculations or state updates resolve
+    setTimeout(() => {
+      window.print();
       setIsExporting(false);
-    }
+    }, 300);
   };
 
   return (
@@ -97,10 +69,31 @@ const App: React.FC = () => {
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        @media print {
+          @page {
+            size: A4;
+            margin: 15mm;
+          }
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          .main-content { padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+          .lg\\:col-span-8 { width: 100% !important; flex: none !important; }
+          .printable-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+          .chart-container { height: 300px !important; margin-bottom: 2rem; }
+          .timeline-container { display: block !important; max-height: none !important; overflow: visible !important; }
+          .print-header { display: block !important; }
+          table { width: 100% !important; border-collapse: collapse !important; }
+          th { background: #f8fafc !important; color: #64748b !important; padding: 12px 8px !important; border-bottom: 2px solid #e2e8f0 !important; font-size: 9px !important; }
+          td { padding: 8px !important; border-bottom: 1px solid #f1f5f9 !important; font-size: 10px !important; }
+          .advisor-section { page-break-before: always; border: 1px solid #f1f5f9 !important; margin-top: 2rem; }
+          .stats-grid { display: grid !important; grid-template-cols: repeat(3, 1fr) !important; gap: 1rem !important; margin-bottom: 2rem; }
+        }
+        .print-header { display: none; }
       `}</style>
 
-      {/* Navigation */}
-      <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-50">
+      {/* Navigation - Hidden in PDF */}
+      <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-50 no-print">
         <div className="flex items-center gap-4 group cursor-pointer" onClick={() => window.location.reload()}>
           <Logo />
           <div>
@@ -113,11 +106,43 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-4">
+      {/* PDF Exclusive Report Header */}
+      <div className="print-header px-4 mb-8">
+        <div className="flex justify-between items-center border-b-4 border-emerald-600 pb-8">
+          <div className="flex items-center gap-4">
+             <Logo />
+             <div>
+               <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Investment Forecast</h1>
+               <p className="text-slate-500 font-bold text-xs">A comprehensive SIP audit by SajiloWealth</p>
+             </div>
+          </div>
+          <div className="text-right">
+             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Report Date</p>
+             <p className="text-sm font-black text-slate-900">{new Date().toLocaleDateString('en-NP', { dateStyle: 'long' })}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-6 mt-8 bg-slate-50 p-8 rounded-3xl border border-slate-100">
+           <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">SIP Configuration</p>
+              <p className="text-sm font-black text-slate-900">{formatCurrency(inputs.monthlyInvestment)} / {inputs.frequency}</p>
+           </div>
+           <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Expectation</p>
+              <p className="text-sm font-black text-slate-900">{inputs.expectedReturnRate}% Annual Yield</p>
+           </div>
+           <div className="text-right">
+              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Investment Window</p>
+              <p className="text-sm font-black text-slate-900">{inputs.timePeriod} Years</p>
+           </div>
+        </div>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-6 py-4 main-content">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* Controls - Left Panel */}
-          <div className="lg:col-span-4">
+          {/* Controls - Left Panel (Hidden in PDF) */}
+          <div className="lg:col-span-4 no-print">
             <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm sticky top-10">
               <div className="mb-10 flex items-center justify-between">
                 <div>
@@ -184,17 +209,17 @@ const App: React.FC = () => {
           <div className="lg:col-span-8 space-y-8">
             
             {/* Rapid Stats Widgets */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 stats-grid">
+              <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm printable-card">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Invested</p>
                 <p className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(results.totalInvested)}</p>
               </div>
-              <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm">
+              <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm printable-card">
                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Wealth Gained</p>
                 <p className="text-2xl font-black text-emerald-600 tracking-tight">+{formatCurrency(results.estimatedReturns)}</p>
               </div>
-              <div className="bg-emerald-600 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-lg shadow-emerald-100">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
+              <div className="bg-emerald-600 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-lg shadow-emerald-100 printable-card">
+                <div className="absolute top-0 right-0 p-4 opacity-10 no-print">
                   <i className="fas fa-chart-line text-5xl"></i>
                 </div>
                 <p className="text-[10px] font-bold text-emerald-100 uppercase tracking-widest mb-1">Future Value</p>
@@ -203,8 +228,8 @@ const App: React.FC = () => {
             </div>
 
             {/* Content Display Card */}
-            <div className="bg-white border border-slate-100 rounded-[3rem] overflow-hidden shadow-sm">
-              <div className="px-8 py-6 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="bg-white border border-slate-100 rounded-[3rem] overflow-hidden shadow-sm printable-card">
+              <div className="px-8 py-6 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6 no-print">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
                     <i className="fas fa-layer-group text-emerald-600 text-sm"></i>
@@ -232,20 +257,23 @@ const App: React.FC = () => {
                   </div>
                   
                   <button 
-                    onClick={handleDownloadExcel}
+                    onClick={handleDownloadPDF}
                     disabled={isExporting}
                     className="flex items-center gap-3 px-6 h-11 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all active:scale-95 text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200 disabled:opacity-50"
                   >
-                    <i className={`fas ${isExporting ? 'fa-circle-notch animate-spin' : 'fa-file-excel'} text-xs text-emerald-400`}></i>
-                    <span>{isExporting ? 'Generating...' : 'Export to Excel'}</span>
+                    <i className={`fas ${isExporting ? 'fa-circle-notch animate-spin' : 'fa-file-pdf'} text-xs text-emerald-400`}></i>
+                    <span>{isExporting ? 'Formatting...' : 'Download PDF'}</span>
                   </button>
                 </div>
               </div>
 
               <div className="p-8">
-                {/* Graph View */}
-                <div className={`${activeTab === 'chart' ? 'block' : 'hidden'}`}>
-                  <div className="h-[420px]">
+                {/* Graph View - Always visible in PDF if chart is current or if explicitly printing */}
+                <div className={`${activeTab === 'chart' ? 'block' : 'hidden print:block'} chart-container`}>
+                   <div className="hidden print:block mb-4">
+                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Appreciation Curve</h3>
+                   </div>
+                   <div className="h-[420px] print:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={results.growthData}>
                         <defs>
@@ -269,11 +297,14 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Timeline Table View */}
-                <div className={`${activeTab === 'schedule' ? 'block' : 'hidden'}`}>
-                  <div className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                {/* Timeline Table View - Always full expanded in PDF */}
+                <div className={`${activeTab === 'schedule' ? 'block' : 'hidden print:block'} timeline-container print:mt-12`}>
+                  <div className="hidden print:block mb-6 border-b border-slate-100 pb-2">
+                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detailed Amortization Schedule</h3>
+                  </div>
+                  <div className="max-h-[500px] print:max-h-none overflow-y-auto pr-2 custom-scrollbar">
                     <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+                      <thead className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 print:static">
                         <tr className="text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
                           <th className="py-5 px-4">Period</th>
                           <th className="py-5 px-4">Investment</th>
@@ -283,7 +314,7 @@ const App: React.FC = () => {
                       </thead>
                       <tbody>
                         {results.schedule.map((row) => (
-                          <tr key={row.period} className="hover:bg-slate-50 border-b border-slate-50 transition-colors group">
+                          <tr key={row.period} className="hover:bg-slate-50 border-b border-slate-50 transition-colors group print:break-inside-avoid">
                             <td className="py-4 px-4 text-[11px] font-bold text-slate-500">{row.label}</td>
                             <td className="py-4 px-4 text-xs font-semibold text-slate-700">{formatCurrency(row.investmentAmount)}</td>
                             <td className="py-4 px-4 text-xs font-bold text-emerald-500">+{formatCurrency(row.periodicReturn)}</td>
@@ -298,34 +329,34 @@ const App: React.FC = () => {
             </div>
 
             {/* AI Advisor Section */}
-            <div className="bg-white border border-slate-100 rounded-[3rem] shadow-sm overflow-hidden">
-               <div className="bg-slate-900 px-10 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="bg-white border border-slate-100 rounded-[3rem] shadow-sm overflow-hidden printable-card advisor-section">
+               <div className="bg-slate-900 px-10 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 print:bg-slate-50">
                   <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-emerald-500/20 rounded-[1.5rem] flex items-center justify-center border border-emerald-500/20">
-                      <i className="fas fa-microchip text-emerald-400 text-2xl"></i>
+                    <div className="w-16 h-16 bg-emerald-500/20 rounded-[1.5rem] flex items-center justify-center border border-emerald-500/20 print:bg-emerald-100">
+                      <i className="fas fa-microchip text-emerald-400 text-2xl print:text-emerald-600"></i>
                     </div>
                     <div>
-                      <h3 className="text-white text-lg font-black tracking-tight uppercase">AI Wealth Advisor</h3>
-                      <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Smart Market Analysis</p>
+                      <h3 className="text-white text-lg font-black tracking-tight uppercase print:text-slate-900">AI Wealth Advisor</h3>
+                      <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest print:text-emerald-600">Smart Market Analysis</p>
                     </div>
                   </div>
                   <button 
                     onClick={handleGetAdvice}
                     disabled={loadingAdvice}
-                    className="flex items-center gap-3 px-10 py-4 bg-emerald-600 text-white font-black rounded-2xl transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest hover:bg-emerald-500 active:scale-95 shadow-2xl shadow-emerald-900/50"
+                    className="flex items-center gap-3 px-10 py-4 bg-emerald-600 text-white font-black rounded-2xl transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest hover:bg-emerald-500 active:scale-95 shadow-2xl shadow-emerald-900/50 no-print"
                   >
                     {loadingAdvice ? <i className="fas fa-circle-notch animate-spin"></i> : <i className="fas fa-wand-magic-sparkles"></i>}
                     Analyze My Plan
                   </button>
                </div>
                <div className="p-10">
-                  <div className="bg-slate-50/50 rounded-[2.5rem] p-10 border border-slate-100 min-h-[160px] relative">
+                  <div className="bg-slate-50/50 rounded-[2.5rem] p-10 border border-slate-100 min-h-[160px] relative print:border-none print:p-0">
                     {advice ? (
                       <div className="prose prose-slate prose-sm max-w-none">
-                        <div className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">{advice}</div>
+                        <div className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap text-sm print:text-[11px]">{advice}</div>
                       </div>
                     ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center opacity-40">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center opacity-40 print:hidden">
                         <i className="fas fa-brain text-slate-300 text-4xl mb-4"></i>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Request AI analysis for localized Nepalese insights</p>
                       </div>
@@ -337,7 +368,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="max-w-7xl mx-auto px-6 py-20 border-t border-slate-50 mt-12">
+      <footer className="max-w-7xl mx-auto px-6 py-20 border-t border-slate-50 mt-12 no-print">
         <div className="flex flex-col md:flex-row items-center justify-between gap-10">
           <div className="flex items-center gap-5">
              <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
