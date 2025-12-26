@@ -56,7 +56,6 @@ const App: React.FC = () => {
 
   const handleDownloadPDF = () => {
     setIsExporting(true);
-    // Slight delay to ensure any layout calculations or state updates resolve
     setTimeout(() => {
       window.print();
       setIsExporting(false);
@@ -92,7 +91,7 @@ const App: React.FC = () => {
         .print-header { display: none; }
       `}</style>
 
-      {/* Navigation - Hidden in PDF */}
+      {/* Navigation */}
       <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-50 no-print">
         <div className="flex items-center gap-4 group cursor-pointer" onClick={() => window.location.reload()}>
           <Logo />
@@ -141,7 +140,7 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 py-4 main-content">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* Controls - Left Panel (Hidden in PDF) */}
+          {/* Controls - Left Panel */}
           <div className="lg:col-span-4 no-print">
             <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm sticky top-10">
               <div className="mb-10 flex items-center justify-between">
@@ -268,7 +267,6 @@ const App: React.FC = () => {
               </div>
 
               <div className="p-8">
-                {/* Graph View - Always visible in PDF if chart is current or if explicitly printing */}
                 <div className={`${activeTab === 'chart' ? 'block' : 'hidden print:block'} chart-container`}>
                    <div className="hidden print:block mb-4">
                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Appreciation Curve</h3>
@@ -297,7 +295,6 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Timeline Table View - Always full expanded in PDF */}
                 <div className={`${activeTab === 'schedule' ? 'block' : 'hidden print:block'} timeline-container print:mt-12`}>
                   <div className="hidden print:block mb-6 border-b border-slate-100 pb-2">
                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detailed Amortization Schedule</h3>
@@ -364,25 +361,77 @@ const App: React.FC = () => {
                   </div>
                </div>
             </div>
+
+            {/* Methodology Section */}
+            <div className="bg-slate-50 border border-slate-100 rounded-[3rem] p-12 printable-card">
+              <div className="flex items-center gap-6 mb-10">
+                 <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm">
+                   <i className="fas fa-book-open text-emerald-600 text-xl"></i>
+                 </div>
+                 <div>
+                   <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">The Math Behind Your Wealth</h3>
+                   <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-widest mt-1">Calculation Methodology</p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <div className="flex gap-5">
+                    <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                       <i className="fas fa-sync-alt text-emerald-600 text-sm"></i>
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase mb-2">Monthly Compounding</h4>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Unlike simple interest which only calculates returns on your principal, our calculator uses <strong>Monthly Compounding</strong>. This means your returns themselves earn more returns every month, creating an exponential growth curve.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-5">
+                    <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                       <i className="fas fa-chart-pie text-emerald-600 text-sm"></i>
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase mb-2">SIP Formula (FV)</h4>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        We use the standard Future Value formula: <br/>
+                        <code className="bg-emerald-50 px-2 py-0.5 rounded font-bold text-emerald-700">M = P × [((1 + i)ⁿ - 1) / i] × (1 + i)</code><br/>
+                        Where <strong>M</strong> is the final amount, <strong>P</strong> is periodic investment, <strong>i</strong> is monthly rate, and <strong>n</strong> is total months.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-8 rounded-[2rem] border border-slate-100">
+                  <h4 className="font-black text-slate-900 text-xs tracking-tight uppercase mb-4 text-center">Compound vs Simple Interest</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                       <span>Time Horizon</span>
+                       <span>Power Difference</span>
+                    </div>
+                    <div className="h-2 bg-slate-50 rounded-full overflow-hidden">
+                       <div className="h-full bg-emerald-500 w-[40%]"></div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-medium italic">
+                      In the first 5 years, the difference is subtle. By year 20, compounding often results in 3x more wealth than simple interest due to the exponential "snowball effect".
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
 
-      <footer className="max-w-7xl mx-auto px-6 py-20 border-t border-slate-50 mt-12 no-print">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-10">
-          <div className="flex items-center gap-5">
-             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
-               <Logo />
-             </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900">SajiloWealth © 2025</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-1">Smart Financial Planning for Nepal</p>
-            </div>
-          </div>
-          <div className="flex gap-8">
-            <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors">Privacy</a>
-            <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors">Terms</a>
-            <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors">Help</a>
+      <footer className="max-w-7xl mx-auto px-6 py-20 border-t border-slate-50 mt-12 no-print text-center">
+        <div className="flex flex-col items-center gap-5">
+           <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+             <Logo />
+           </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900">SajiloWealth © 2025</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-1">Empowering Nepalese Investors with Data-Driven Clarity</p>
           </div>
         </div>
       </footer>
